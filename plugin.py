@@ -8,20 +8,21 @@ from qgis.PyQt.QtWidgets import QAction, QMessageBox
 from qgis.core import QgsApplication
 
 from .provider import CoastlineProvider, PROVIDER_ID
+from .core.i18n import language, tr
 
-MENU = "&Динамика береговой линии"
+MENU = tr("&Динамика береговой линии")
 PLUGIN_DIR = os.path.dirname(__file__)
 
 # (идентификатор алгоритма, подпись, значок, показывать ли на панели инструментов)
 ACTIONS = [
-    ("full_pipeline", "Полный расчёт (шаги 1–5)…", "icon.svg", True),
+    ("full_pipeline", tr("Полный расчёт (шаги 1–5)…"), "icon.svg", True),
     (None, None, None, True),
-    ("download_scenes", "1. Загрузка снимков из каталога STAC…", "download.svg", True),
-    ("annual_composites", "2. Годовые композиты водного индекса…", "composite.svg", True),
-    ("index_from_rasters", "2а. Водный индекс по готовым годовым растрам…", "composite.svg", False),
-    ("annual_shorelines", "3. Годовые береговые линии…", "shoreline.svg", True),
-    ("rates_of_change", "4. Темпы смещения берега…", "rates.svg", True),
-    ("hotspots", "5. Обобщённые темпы по участкам берега…", "hotspots.svg", True),
+    ("download_scenes", tr("1. Загрузка снимков из каталога STAC…"), "download.svg", True),
+    ("annual_composites", tr("2. Годовые композиты водного индекса…"), "composite.svg", True),
+    ("index_from_rasters", tr("2а. Водный индекс по готовым годовым растрам…"), "composite.svg", False),
+    ("annual_shorelines", tr("3. Годовые береговые линии…"), "shoreline.svg", True),
+    ("rates_of_change", tr("4. Темпы смещения берега…"), "rates.svg", True),
+    ("hotspots", tr("5. Обобщённые темпы по участкам берега…"), "hotspots.svg", True),
 ]
 
 
@@ -45,7 +46,7 @@ class CoastlineDynamicsPlugin(object):
 
     def initGui(self):
         self.initProcessing()
-        self.toolbar = self.iface.addToolBar("Динамика береговой линии")
+        self.toolbar = self.iface.addToolBar(tr("Динамика береговой линии"))
         self.toolbar.setObjectName("CoastlineDynamicsToolbar")
         for alg_id, title, icon, on_toolbar in ACTIONS:
             if alg_id is None:
@@ -58,12 +59,12 @@ class CoastlineDynamicsPlugin(object):
                 self.toolbar.addAction(action)
             self.actions.append(action)
         self.toolbar.addSeparator()
-        self.dock_action = QAction(_icon("chart.svg"), "График смещения берега в точке", self.iface.mainWindow())
+        self.dock_action = QAction(_icon("chart.svg"), tr("График смещения берега в точке"), self.iface.mainWindow())
         self.dock_action.setCheckable(True)
         self.dock_action.triggered.connect(self.toggle_dock)
         self.iface.addPluginToMenu(MENU, self.dock_action)
         self.toolbar.addAction(self.dock_action)
-        help_action = QAction(_icon("help.svg"), "Справка", self.iface.mainWindow())
+        help_action = QAction(_icon("help.svg"), tr("Справка"), self.iface.mainWindow())
         help_action.triggered.connect(self.show_help)
         self.iface.addPluginToMenu(MENU, help_action)
         self.actions.append(help_action)
@@ -88,9 +89,9 @@ class CoastlineDynamicsPlugin(object):
         try:
             import processing
         except ImportError:
-            QMessageBox.warning(self.iface.mainWindow(), "Динамика береговой линии",
-                                "Не включён модуль «Processing» (Анализ данных). Включите его в "
-                                "диалоге «Модули — Управление модулями» и повторите.")
+            QMessageBox.warning(self.iface.mainWindow(), tr("Динамика береговой линии"),
+                                tr("Не включён модуль «Processing» (Анализ данных). Включите его в "
+                                "диалоге «Модули — Управление модулями» и повторите."))
             return
         processing.execAlgorithmDialog("%s:%s" % (PROVIDER_ID, alg_id), {})
 
@@ -113,5 +114,5 @@ class CoastlineDynamicsPlugin(object):
             self.dock.clear_marker()
 
     def show_help(self):
-        path = os.path.join(PLUGIN_DIR, "help", "index.html")
+        path = os.path.join(PLUGIN_DIR, "help", "index.html" if language() == "ru" else "index_en.html")
         QDesktopServices.openUrl(QUrl.fromLocalFile(path))

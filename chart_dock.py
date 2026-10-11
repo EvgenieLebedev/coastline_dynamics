@@ -15,12 +15,14 @@ from qgis.core import (NULL, QgsCoordinateTransform, QgsFeatureRequest, QgsGeome
                        QgsProject, QgsRectangle, QgsVectorLayer, QgsWkbTypes)
 from qgis.gui import QgsMapTool, QgsRubberBand
 
+from .core.i18n import dec, tr
+
 CERTAINTY_RU = {
-    "good": "надёжно",
-    "baseline outlier": "опорный год выпадает из ряда",
-    "high angular variability": "линии разных лет не ложатся на одно направление",
-    "insufficient observations": "мало лет с данными",
-    "insufficient points": "мало точек в круге обобщения",
+    "good": tr("надёжно"),
+    "baseline outlier": tr("опорный год выпадает из ряда"),
+    "high angular variability": tr("линии разных лет не ложатся на одно направление"),
+    "insufficient observations": tr("мало лет с данными"),
+    "insufficient points": tr("мало точек в круге обобщения"),
 }
 
 
@@ -110,7 +112,7 @@ class ChartWidget(QWidget):
         if not vals:
             p.setPen(QColor(110, 110, 110))
             p.drawText(rect, Qt.AlignCenter | Qt.TextWordWrap,
-                       "Включите инструмент и щёлкните по точке слоя темпов смещения берега")
+                       tr("Включите инструмент и щёлкните по точке слоя темпов смещения берега"))
             return
         left, right, top, bottom = 58.0, 14.0, 12.0, 34.0
         plot = QRectF(rect.left() + left, rect.top() + top,
@@ -136,7 +138,7 @@ class ChartWidget(QWidget):
             p.drawLine(QPointF(plot.left(), py(v)), QPointF(plot.right(), py(v)))
             p.setPen(text_pen)
             p.drawText(QRectF(rect.left(), py(v) - 8, left - 6, 16), Qt.AlignRight | Qt.AlignVCenter,
-                       ("%g" % round(v, 6)).replace(".", ","))
+                       dec("%g" % round(v, 6)))
             v += step
         ystep = 5 if y1 - y0 > 12 else (2 if y1 - y0 > 6 else 1)
         for year in range(int(math.ceil(y0 / float(ystep)) * ystep), y1 + 1, ystep):
@@ -149,12 +151,12 @@ class ChartWidget(QWidget):
         p.setPen(QPen(QColor(120, 120, 120), 1, Qt.DashLine))
         p.drawLine(QPointF(plot.left(), py(0.0)), QPointF(plot.right(), py(0.0)))
         p.setPen(text_pen)
-        p.drawText(QRectF(plot.left(), plot.bottom() + 17, plot.width(), 14), Qt.AlignCenter, "Год")
+        p.drawText(QRectF(plot.left(), plot.bottom() + 17, plot.width(), 14), Qt.AlignCenter, tr("Год"))
         p.save()
         p.translate(rect.left() + 11, plot.center().y())
         p.rotate(-90)
         p.drawText(QRectF(-plot.height() / 2.0, -8, plot.height(), 16), Qt.AlignCenter,
-                   "Положение, м   (+ к морю)")
+                   tr("Положение, м   (+ к морю)"))
         p.restore()
 
         # ломаная, тренд, точки
@@ -191,29 +193,29 @@ def describe(series):
     info = series["info"]
     rate, se, sig = _num(info.get("rate_time")), _num(info.get("se_time")), _num(info.get("sig_time"))
     if rate is None:
-        return "Темп не определён: в точке недостаточно лет с данными."
-    verb = "нарастает" if rate > 0 else "отступает"
-    text = "<b>Берег %s на %s м/год</b>" % (verb, ("%.2f" % abs(rate)).replace(".", ","))
+        return tr("Темп не определён: в точке недостаточно лет с данными.")
+    verb = tr("нарастает") if rate > 0 else tr("отступает")
+    text = tr("<b>Берег %s на %s м/год</b>") % (verb, dec("%.2f" % abs(rate)))
     if se is not None:
-        text += " (±%s, 95 %%)" % ("%.2f" % (1.96 * se)).replace(".", ",")
+        text += " (±%s, 95 %%)" % dec("%.2f" % (1.96 * se))
     if sig is not None:
         # знак «меньше» записан кодом: подпись выводится как размеченный текст
-        p_text = "p &lt; 0,001" if sig < 0.001 else "p = " + ("%.3f" % sig).replace(".", ",")
-        text += "; %s — тренд %s" % (p_text, "значим" if sig <= 0.01 else "незначим")
+        p_text = "p &lt; " + dec("0.001") if sig < 0.001 else "p = " + dec("%.3f" % sig)
+        text += tr("; %s — тренд %s") % (p_text, tr("значим") if sig <= 0.01 else tr("незначим"))
     parts = []
     nsm, sce = _num(info.get("nsm")), _num(info.get("sce"))
     if nsm is not None:
-        parts.append("смещение за период %s м" % ("%+.0f" % nsm).replace("-", "−"))
+        parts.append(tr("смещение за период %s м") % ("%+.0f" % nsm).replace("-", "−"))
     if sce is not None:
-        parts.append("размах положений %.0f м" % sce)
+        parts.append(tr("размах положений %.0f м") % sce)
     if series["outliers"]:
         missing = [y for y, d in zip(series["years"], series["dist"]) if d is None]
         real = sorted(set(series["outliers"]) - set(missing))
         if real:
-            parts.append("исключены годы: %s" % ", ".join(str(y) for y in real))
+            parts.append(tr("исключены годы: %s") % ", ".join(str(y) for y in real))
     cert = info.get("certainty")
     if cert not in (None, NULL):
-        parts.append("надёжность: %s" % CERTAINTY_RU.get(str(cert), str(cert)))
+        parts.append(tr("надёжность: %s") % CERTAINTY_RU.get(str(cert), str(cert)))
     return text + ("<br>" + "; ".join(parts) if parts else "")
 
 
@@ -232,7 +234,7 @@ class PickTool(QgsMapTool):
 class ChartDock(QDockWidget):
 
     def __init__(self, iface):
-        super().__init__("График смещения берега", iface.mainWindow())
+        super().__init__(tr("График смещения берега"), iface.mainWindow())
         self.setObjectName("CoastlineDynamicsChart")
         self.iface = iface
         self.tool = PickTool(iface.mapCanvas(), self.pick)
@@ -245,10 +247,10 @@ class ChartDock(QDockWidget):
         lay = QVBoxLayout(body)
         lay.setContentsMargins(6, 6, 6, 6)
         row = QHBoxLayout()
-        self.btn_pick = QPushButton("Выбрать точку на карте")
+        self.btn_pick = QPushButton(tr("Выбрать точку на карте"))
         self.btn_pick.setCheckable(True)
         self.btn_pick.toggled.connect(self.toggle_tool)
-        self.btn_save = QPushButton("Сохранить график…")
+        self.btn_save = QPushButton(tr("Сохранить график…"))
         self.btn_save.clicked.connect(self.save_png)
         self.btn_save.setEnabled(False)
         row.addWidget(self.btn_pick)
@@ -257,7 +259,7 @@ class ChartDock(QDockWidget):
         lay.addLayout(row)
         self.chart = ChartWidget()
         lay.addWidget(self.chart, 1)
-        self.label = QLabel("Точка не выбрана.")
+        self.label = QLabel(tr("Точка не выбрана."))
         self.label.setWordWrap(True)
         self.label.setTextFormat(Qt.RichText)
         lay.addWidget(self.label)
@@ -307,7 +309,7 @@ class ChartDock(QDockWidget):
                 if best is None or d < best[0]:
                     best = (d, feat, lyr)
         if best is None:
-            self.label.setText("Рядом со щелчком нет точек слоя темпов. Слой должен быть видимым.")
+            self.label.setText(tr("Рядом со щелчком нет точек слоя темпов. Слой должен быть видимым."))
             return
         self.show_feature(best[1], best[2])
 
@@ -320,7 +322,7 @@ class ChartDock(QDockWidget):
         self.marker.addGeometry(feature.geometry(), layer)
 
     def save_png(self):
-        path, _ = QFileDialog.getSaveFileName(self, "Сохранить график", "", "Изображение PNG (*.png)")
+        path, _ = QFileDialog.getSaveFileName(self, tr("Сохранить график"), "", tr("Изображение PNG (*.png)"))
         if path:
             if not path.lower().endswith(".png"):
                 path += ".png"

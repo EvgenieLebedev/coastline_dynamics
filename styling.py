@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Оформление результатов: условные знаки слоёв и русские подписи полей."""
+"""Оформление результатов: условные знаки слоёв и подписи полей."""
 from qgis.core import (
     QgsCategorizedSymbolRenderer, QgsLayerTreeLayer, QgsProject, QgsColorRampShader, QgsContrastEnhancement,
     QgsGraduatedSymbolRenderer, QgsLineSymbol, QgsMarkerSymbol, QgsMultiBandColorRenderer,
@@ -10,30 +10,32 @@ from qgis.core import (
 from qgis.PyQt.QtCore import QTimer
 from qgis.PyQt.QtGui import QColor
 
+from .core.i18n import dec, tr
+
 # Шкала лет: от тёмно-фиолетового (давние годы) к жёлтому (недавние)
 YEAR_STOPS = [(0.0, (13, 8, 135)), (0.25, (126, 3, 168)), (0.5, (204, 71, 120)),
               (0.75, (248, 149, 64)), (1.0, (240, 249, 33))]
 # Шкала темпов, м/год: красное — отступание, синее — нарастание
 RATE_CLASSES = [
-    (-1e9, -5.0, (165, 0, 38), "отступание быстрее 5 м/год"),
-    (-5.0, -2.0, (215, 48, 39), "отступание 2–5 м/год"),
-    (-2.0, -1.0, (244, 109, 67), "отступание 1–2 м/год"),
-    (-1.0, -0.3, (253, 174, 97), "отступание 0,3–1 м/год"),
-    (-0.3, 0.3, (235, 235, 235), "устойчиво (менее 0,3 м/год)"),
-    (0.3, 1.0, (171, 217, 233), "нарастание 0,3–1 м/год"),
-    (1.0, 2.0, (116, 173, 209), "нарастание 1–2 м/год"),
-    (2.0, 5.0, (69, 117, 180), "нарастание 2–5 м/год"),
-    (5.0, 1e9, (49, 54, 149), "нарастание быстрее 5 м/год"),
+    (-1e9, -5.0, (165, 0, 38), tr("отступание быстрее 5 м/год")),
+    (-5.0, -2.0, (215, 48, 39), tr("отступание 2–5 м/год")),
+    (-2.0, -1.0, (244, 109, 67), tr("отступание 1–2 м/год")),
+    (-1.0, -0.3, (253, 174, 97), tr("отступание 0,3–1 м/год")),
+    (-0.3, 0.3, (235, 235, 235), tr("устойчиво (менее 0,3 м/год)")),
+    (0.3, 1.0, (171, 217, 233), tr("нарастание 0,3–1 м/год")),
+    (1.0, 2.0, (116, 173, 209), tr("нарастание 1–2 м/год")),
+    (2.0, 5.0, (69, 117, 180), tr("нарастание 2–5 м/год")),
+    (5.0, 1e9, (49, 54, 149), tr("нарастание быстрее 5 м/год")),
 ]
 ALIASES = {
-    "uid": "Идентификатор", "year": "Год", "certainty": "Надёжность", "length_m": "Длина, м",
-    "index": "Индекс", "threshold": "Порог индекса",
-    "rate_time": "Темп, м/год", "sig_time": "Значимость (p)", "se_time": "Ст. ошибка темпа, м/год",
-    "outl_time": "Годы вне расчёта", "angle_mean": "Направление смещения, °",
-    "angle_std": "Разброс направлений, °", "valid_obs": "Лет в расчёте", "valid_span": "Охват, лет",
-    "sce": "Размах положений, м", "nsm": "Итоговое смещение, м",
-    "max_year": "Год наибольшего выдвижения", "min_year": "Год наибольшего отступания",
-    "radius_m": "Радиус обобщения, м", "n": "Точек в круге",
+    "uid": tr("Идентификатор"), "year": tr("Год"), "certainty": tr("Надёжность"), "length_m": tr("Длина, м"),
+    "index": tr("Индекс"), "threshold": tr("Порог индекса"),
+    "rate_time": tr("Темп, м/год"), "sig_time": tr("Значимость (p)"), "se_time": tr("Ст. ошибка темпа, м/год"),
+    "outl_time": tr("Годы вне расчёта"), "angle_mean": tr("Направление смещения, °"),
+    "angle_std": tr("Разброс направлений, °"), "valid_obs": tr("Лет в расчёте"), "valid_span": tr("Охват, лет"),
+    "sce": tr("Размах положений, м"), "nsm": tr("Итоговое смещение, м"),
+    "max_year": tr("Год наибольшего выдвижения"), "min_year": tr("Год наибольшего отступания"),
+    "radius_m": tr("Радиус обобщения, м"), "n": tr("Точек в круге"),
 }
 
 
@@ -56,7 +58,7 @@ def _aliases(layer):
         if name in ALIASES:
             layer.setFieldAlias(i, ALIASES[name])
         elif name.startswith("dist_"):
-            layer.setFieldAlias(i, "%s г., м" % name[5:])
+            layer.setFieldAlias(i, tr("%s г., м") % name[5:])
 
 
 def style_shorelines(layer):
@@ -117,7 +119,7 @@ def style_index(layer):
              (0.3, QColor(90, 180, 172)), (0.6, QColor(1, 102, 94))]
     fn = QgsColorRampShader(-0.6, 0.6)
     fn.setColorRampType(QgsColorRampShader.Interpolated)
-    fn.setColorRampItemList([QgsColorRampShader.ColorRampItem(v, c, ("%.1f" % v).replace(".", ","))
+    fn.setColorRampItemList([QgsColorRampShader.ColorRampItem(v, c, dec("%.1f" % v))
                              for v, c in stops])
     shader = QgsRasterShader()
     shader.setRasterShaderFunction(fn)
@@ -141,9 +143,9 @@ def style_rgb(layer):
 
 
 def style_coastal_mask(layer):
-    classes = [QgsPalettedRasterRenderer.Class(0, QColor(166, 206, 227, 120), "море"),
-               QgsPalettedRasterRenderer.Class(1, QColor(255, 237, 111, 150), "прибрежная полоса"),
-               QgsPalettedRasterRenderer.Class(2, QColor(120, 120, 120, 110), "суша и внутренние воды")]
+    classes = [QgsPalettedRasterRenderer.Class(0, QColor(166, 206, 227, 120), tr("море")),
+               QgsPalettedRasterRenderer.Class(1, QColor(255, 237, 111, 150), tr("прибрежная полоса")),
+               QgsPalettedRasterRenderer.Class(2, QColor(120, 120, 120, 110), tr("суша и внутренние воды"))]
     layer.setRenderer(QgsPalettedRasterRenderer(layer.dataProvider(), 1, classes))
     layer.triggerRepaint()
 

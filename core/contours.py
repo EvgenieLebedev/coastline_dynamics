@@ -12,6 +12,7 @@ from osgeo import gdal, ogr
 
 from . import gridio
 from .masks import CERTAINTY_CLASSES
+from .i18n import tr
 
 _FILL = -9999.0
 
@@ -90,7 +91,7 @@ def annual_shorelines(prep, min_vertices=10, log=None, is_canceled=None):
             records.append({"year": int(year), "certainty": CERTAINTY_CLASSES[cls],
                             "lines": by_class[cls], "length_m": length})
         if not lines:
-            log("%d: береговая линия не выделена (нет данных в прибрежной полосе)." % year)
+            log(tr("%d: береговая линия не выделена (нет данных в прибрежной полосе).") % year)
         else:
-            log("%d: длина береговой линии %.1f км." % (year, total / 1000.0))
+            log(tr("%d: длина береговой линии %.1f км.") % (year, total / 1000.0))
     return records

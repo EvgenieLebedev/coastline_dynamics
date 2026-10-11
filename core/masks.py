@@ -23,6 +23,7 @@ from scipy import ndimage
 
 from . import composites, gridio, morph
 from .stac import Canceled
+from .i18n import tr
 
 # Размеры морфологических элементов DEA Coastlines, пересчитанные из пикселей Landsat в метры
 RIVER_WIDTH_M = 240.0        # disk(8): водотоки уже примерно 2 x 240 м считаются реками
@@ -50,7 +51,7 @@ def find_composites(folder, index=None):
                 index = cand
                 break
     if index is None:
-        raise ValueError("В папке не найдены годовые композиты индекса (файлы вида mndwi_2020.tif): %s" % folder)
+        raise ValueError(tr("В папке не найдены годовые композиты индекса (файлы вида mndwi_2020.tif): %s") % folder)
     annual, gap = {}, {}
     for n in names:
         if not (n.startswith(index + "_") and n.endswith(".tif")):
@@ -62,7 +63,7 @@ def find_composites(folder, index=None):
         if stem.isdigit():
             target[int(stem)] = os.path.join(folder, n)
     if not annual:
-        raise ValueError("В папке нет файлов %s_<год>.tif: %s" % (index, folder))
+        raise ValueError(tr("В папке нет файлов %s_<год>.tif: %s") % (index, folder))
     return index, annual, gap
 
 
@@ -154,7 +155,7 @@ def load_combined(folder, index=None, year_from=None, year_to=None, gapfill_belo
     years = sorted(y for y in annual if (year_from is None or y >= year_from)
                    and (year_to is None or y <= year_to))
     if not years:
-        raise ValueError("В папке нет композитов за выбранные годы.")
+        raise ValueError(tr("В папке нет композитов за выбранные годы."))
     grid = gridio.grid_of(annual[years[0]])
     px = grid.res
     shape = (len(years), grid.height, grid.width)
@@ -179,7 +180,7 @@ def load_combined(folder, index=None, year_from=None, year_to=None, gapfill_belo
         idx[cnt < min_annual_obs] = np.nan       # единственное наблюдение за год слишком уязвимо к помехам
         combined[k] = idx
         certainty[k] = certainty_masking(std, cnt_c, obs_threshold, stdev_threshold)
-    log("Загружены композиты %s за %d–%d (лет: %d), сетка %dx%d." %
+    log(tr("Загружены композиты %s за %d–%d (лет: %d), сетка %dx%d.") %
         (index.upper(), years[0], years[-1], len(years), grid.width, grid.height))
     return {"index": index, "years": years, "grid": grid, "combined": combined,
             "certainty": certainty, "gapfilled": gapfilled}
@@ -208,14 +209,14 @@ def preprocess(folder, index=None, threshold=0.0, year_from=None, year_to=None,
     with np.errstate(invalid="ignore"):
         land = (combined < threshold) & ~nodata
     if mask_temporal and len(years) < 2:
-        log("Композит один: временная маска не применяется (не с чем сравнивать).")
+        log(tr("Композит один: временная маска не применяется (не с чем сравнивать)."))
         mask_temporal = False
     if mask_temporal:
         tmask = temporal_masking(land)
         removed = int((land & ~tmask).sum())
         land &= tmask
         nodata |= ~tmask
-        log("Временная маска: снято %d пикселей неподтверждённой «суши»." % removed)
+        log(tr("Временная маска: снято %d пикселей неподтверждённой «суши».") % removed)
     else:
         tmask = np.ones(shape, dtype=bool)
 
@@ -234,14 +235,14 @@ def preprocess(folder, index=None, threshold=0.0, year_from=None, year_to=None,
         mouth = morph.erode(all80 | rivers, RIVER_MOUTH_M / px)
         rivers &= mouth
         river_mask = ~morph.dilate(rivers, RIVER_BUFFER_M / px)
-        log("Маска водотоков: исключено %.2f км2." % ((~river_mask).sum() * px * px / 1e6))
+        log(tr("Маска водотоков: исключено %.2f км2.") % ((~river_mask).sum() * px * px / 1e6))
 
     # Затравка моря: заведомо открытая вода
     persistent = ~all20 & (valid_n > 0)
     if sea_wkb:
         seeds = morph.dilate(rasterize_geoms(sea_wkb, grid), 1) & persistent
         if not seeds.any():
-            raise ValueError("Слой морской акватории не попадает на воду в пределах участка.")
+            raise ValueError(tr("Слой морской акватории не попадает на воду в пределах участка."))
     else:
         radius = (OCEAN_EROSION_M if sea_mode == "largest" else WATERBODY_EROSION_M) / px
         seeds = morph.erode(persistent, radius)
@@ -249,7 +250,7 @@ def preprocess(folder, index=None, threshold=0.0, year_from=None, year_to=None,
             radius /= 2.0
             seeds = morph.erode(persistent, radius)
         if not seeds.any():
-            raise ValueError("На участке не найдено открытой воды. Проверьте порог индекса и охват.")
+            raise ValueError(tr("На участке не найдено открытой воды. Проверьте порог индекса и охват."))
         if sea_mode == "largest":
             lab, n = morph.label(persistent)
             sizes = np.bincount(lab.ravel())
@@ -257,12 +258,12 @@ def preprocess(folder, index=None, threshold=0.0, year_from=None, year_to=None,
             cand = cand[cand > 0]
             best = cand[np.argmax(sizes[cand])]
             seeds &= lab == best
-            log("Море: крупнейший постоянный водоём, %.1f км2 в пределах участка."
+            log(tr("Море: крупнейший постоянный водоём, %.1f км2 в пределах участка.")
                 % (sizes[best] * px * px / 1e6))
         else:
             lab, n = morph.label(persistent)
             found = np.unique(lab[seeds])
-            log("Море и водоёмы: все постоянные водоёмы шире %.0f м, найдено %d."
+            log(tr("Море и водоёмы: все постоянные водоёмы шире %.0f м, найдено %d.")
                 % (2 * WATERBODY_EROSION_M, int((found > 0).sum())))
 
     all_time_ocean = ocean_masking(all20 | rivers, seeds)
@@ -282,7 +283,7 @@ def preprocess(folder, index=None, threshold=0.0, year_from=None, year_to=None,
                                      dilation=ANNUAL_DILATION_PX)
         keep = tmask[k] & annual_ocean & (coastal_mask == 1)
         masked[k][keep] = combined[k][keep]
-    log("Прибрежная полоса %.0f м: %.1f км2." % (buffer_m, (coastal_mask == 1).sum() * px * px / 1e6))
+    log(tr("Прибрежная полоса %.0f м: %.1f км2.") % (buffer_m, (coastal_mask == 1).sum() * px * px / 1e6))
     return {"index": index, "years": years, "grid": grid, "masked": masked, "combined": combined,
             "certainty": certainty, "coastal_mask": coastal_mask, "land_freq": land_freq,
             "gapfilled": gapfilled, "threshold": threshold}

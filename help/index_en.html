@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Coastline Dynamics — help</title>
+<style>
+  body { font-family: "Segoe UI", system-ui, sans-serif; max-width: 860px; margin: 28px auto; padding: 0 20px;
+         color: #1b1b1b; line-height: 1.5; background: #fcfcfb; }
+  h1 { font-size: 26px; margin-bottom: 4px; }
+  h2 { font-size: 19px; margin-top: 30px; border-bottom: 1px solid #e1e0d9; padding-bottom: 4px; }
+  p.lead { color: #52514e; margin-top: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 10px 0 18px; font-size: 14px; }
+  th, td { border: 1px solid #e1e0d9; padding: 6px 9px; text-align: left; vertical-align: top; }
+  th { background: #f1f0ec; }
+  code { background: #f1f0ec; padding: 1px 4px; border-radius: 3px; font-size: 13px; }
+  .note { background: #eef4fd; border-left: 4px solid #2a78d6; padding: 9px 13px; margin: 14px 0; }
+  ol li, ul li { margin-bottom: 5px; }
+</style>
+</head>
+<body>
+<h1>Coastline Dynamics</h1>
+<p class="lead">A QGIS plugin: annual shorelines and rates of their change from long Landsat and Sentinel-2
+time series. The method follows Digital Earth Australia Coastlines (Bishop-Taylor et&nbsp;al., 2021).</p>
+
+<h2>Workflow</h2>
+<p>The calculation has five steps. Each step is a separate Processing algorithm (the “Coastline Dynamics”
+group in the Processing Toolbox); it is also available as a button on the plugin toolbar and in the menu
+“Plugins – Coastline Dynamics”. Each step takes the result of the previous one as input.</p>
+<table>
+<tr><th>Step</th><th>What it does</th><th>Result</th></tr>
+<tr><td>1. Download scenes from the STAC catalogue</td>
+    <td>Finds the scenes over the area in the Microsoft Planetary Computer catalogue and saves clips of three
+        reflectance bands; clouds, shadows and snow are masked.</td>
+    <td>Archive folder: one file per acquisition day and a <code>scenes.csv</code> table.</td></tr>
+<tr><td>2. Annual composites of the water index</td>
+    <td>From all images of the year computes the per-pixel median of the MNDWI or NDWI index, its standard
+        deviation and the number of observations; builds fallback three-year composites.</td>
+    <td>Composites folder: <code>mndwi_YYYY.tif</code>, <code>mndwi_YYYY_gapfill.tif</code>,
+        <code>rgb_YYYY.tif</code>.</td></tr>
+<tr><td>3. Annual shorelines</td>
+    <td>Separates the sea from inland waters, restricts the analysis to a coastal strip and draws the
+        shoreline of every year at sub-pixel precision.</td>
+    <td>Line layer: fields <code>year</code>, <code>certainty</code>.</td></tr>
+<tr><td>4. Rates of shoreline change</td>
+    <td>At points every 30&nbsp;m along the shoreline of the baseline year measures the position of every
+        year's shoreline and fits a linear trend.</td>
+    <td>Point layer: rate <code>rate_time</code>, significance <code>sig_time</code>,
+        positions <code>dist_YYYY</code>.</td></tr>
+<tr><td>5. Summarised rates along the coast</td>
+    <td>Reduces point rates to overview points: the median within a circle of a given radius.</td>
+    <td>Point layer for small scales.</td></tr>
+</table>
+<p>The “Full run (steps 1–5)” algorithm runs the whole chain in one go with default parameters.
+Algorithm “2a” replaces steps 1 and 2 when annual reflectance composites already exist.</p>
+<div class="note">A repeated run of step 1 with the same folder fetches only the missing scenes.
+No account in the catalogue is needed.</div>
+
+<h2>Reading the result</h2>
+<ul>
+<li><b>Rate</b> (<code>rate_time</code>, m/yr): negative means the coast is retreating, positive means it is growing.</li>
+<li><b>Significance</b> (<code>sig_time</code>): the probability of getting such a slope by chance. The trend is
+    treated as established at 0.01 or less.</li>
+<li><b>Certainty</b> (<code>certainty</code>): <code>good</code> or the reason for doubt.</li>
+<li>On the map, large symbols mark points where both <code>certainty = good</code> and
+    <code>sig_time ≤ 0.01</code>; red tones mean retreat, blue tones mean growth.</li>
+<li><b>Position</b> (<code>dist_YYYY</code>, m): where the year's shoreline lay relative to the shoreline of the
+    baseline year; positive is seaward, negative is landward.</li>
+</ul>
+<table>
+<tr><th>certainty value</th><th>Meaning</th></tr>
+<tr><td><code>good</code></td><td>No remarks.</td></tr>
+<tr><td><code>insufficient data</code> (lines)</td><td>Fewer than five observations in the year along this part of the line.</td></tr>
+<tr><td><code>unstable data</code> (lines)</td><td>Standard deviation of the index above 0.3: the waterline moved noticeably within the season.</td></tr>
+<tr><td><code>baseline outlier</code></td><td>The shoreline of the baseline year is itself an outlier.</td></tr>
+<tr><td><code>high angular variability</code></td><td>The nearest points of the shorelines of different years lie in different directions: the coast is complex and a trend along one axis is undefined.</td></tr>
+<tr><td><code>insufficient observations</code></td><td>A distance was obtained for fewer than 75&nbsp;% of the years.</td></tr>
+<tr><td><code>extreme value</code></td><td>Rate above 50&nbsp;m/yr: more likely a failure than a real change.</td></tr>
+<tr><td><code>insufficient points</code> (summary)</td><td>Too few source points fell inside the circle.</td></tr>
+</table>
+
+<h2>Point chart</h2>
+<p>The “Shoreline change chart for a point” button opens a panel. Click “Pick a point on the map” and then
+a point of the rates layer: the panel shows the shoreline positions by year, the trend line and a summary.
+Hollow circles are years excluded from the trend as outliers.</p>
+
+<h2>Frequent questions</h2>
+<ul>
+<li><b>The sea freezes.</b> Restrict the season to ice-free months (the parameters “First month of the season”
+    and “Last month of the season” at steps 1 and 2).</li>
+<li><b>The area contains a lagoon or estuary.</b> By default the sea is the largest water body in the area.
+    To point out the sea explicitly, create a layer with a point in the sea and set it in the parameter
+    “Sea layer”.</li>
+<li><b>Shores of a lake or reservoir are needed.</b> At step 3 choose “All water bodies wider than 300 m” and
+    turn off the exclusion of narrow watercourses in the advanced parameters.</li>
+<li><b>A tidal sea.</b> At step 2 give a sea level table (CSV: UTC date and time; level): only images taken
+    at a level close to the mean will be used.</li>
+<li><b>The coast changes quickly and in jumps.</b> At step 4, in the advanced parameters, choose the exclusion
+    of outlier years “By trend residuals” and check against the point chart: a linear trend describes gradual
+    change, not one-off events.</li>
+</ul>
+
+<h2>Source of the method</h2>
+<p>Bishop-Taylor R., Nanson R., Sagar S., Lymburner L. (2021). Mapping Australia's dynamic coastline at mean sea
+level using three decades of Landsat imagery. Remote Sensing of Environment, 267, 112734.
+Source code: github.com/GeoscienceAustralia/dea-coastlines.</p>
+</body>
+</html>

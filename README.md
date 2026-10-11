@@ -15,6 +15,8 @@
 Снимки модуль сам находит и загружает из открытого каталога Microsoft Planetary Computer, регистрация не нужна.
 Дополнительных библиотек ставить не требуется: расчёт опирается на numpy, scipy и GDAL, которые входят в QGIS.
 
+Интерфейс — на русском и английском: язык выбирается по языку QGIS.
+
 ![Результат расчёта в окне QGIS](docs/img/main_result.png)
 
 *Результат в окне QGIS: береговые линии 1984–2025 годов (от тёмных к светлым) и темпы смещения берега в точках
@@ -68,14 +70,14 @@ flowchart LR
 
 Папка модуля в профиле QGIS должна называться `coastline_dynamics`.
 
-**Через git.** Откройте папку модулей своего профиля и склонируйте репозиторий под нужным именем:
+**Через git.** Откройте папку модулей своего профиля и склонируйте в неё репозиторий:
 
 ```
-git clone <адрес этого репозитория> coastline_dynamics
+git clone https://github.com/EvgenieLebedev/coastline_dynamics.git
 ```
 
 **Без git.** Нажмите на странице репозитория **Code → Download ZIP**, распакуйте архив, переименуйте папку
-в `coastline_dynamics` и перенесите её в папку модулей.
+`coastline_dynamics-main` в `coastline_dynamics` и перенесите её в папку модулей.
 
 Где лежит папка модулей:
 
@@ -250,7 +252,6 @@ DEA Coastlines; какие именно и что в них изменено, з
 - Готовые годовые композиты (алгоритм 2а) нужно проверять самостоятельно: число наблюдений и разброс индекса
   по ним восстановить нельзя, признаки надёжности линий не вычисляются.
 - Для шага 1 нужен интернет.
-- Интерфейс модуля — на русском языке.
 
 ## Состав репозитория
 
@@ -265,14 +266,16 @@ coastline_dynamics/
     rates.py         точки вдоль берега, расстояния со знаком, регрессия, обобщение
     morph.py         морфологические операции
     gridio.py        сетка, чтение и запись растров
+    i18n.py          язык интерфейса: русский или английский, по языку QGIS
+    i18n_en.py       английские строки интерфейса
   algorithms.py      семь алгоритмов панели инструментов анализа (поставщик coastdyn)
   styling.py         оформление слоёв результата
   chart_dock.py      панель «График смещения берега»
   plugin.py          меню и панель инструментов
   provider.py        поставщик алгоритмов
-  help/index.html    встроенная справка
+  help/              встроенная справка: index.html (русская), index_en.html (английская)
   icons/             значки
-  docs/img/          иллюстрации к этому описанию
+  docs/img/          иллюстрации к этому описанию (docs/img/en — английский интерфейс)
   metadata.txt       сведения о модуле для QGIS
   LICENSE            лицензия MIT
   NOTICE             сведения о коде, перенесённом из DEA Coastlines
@@ -280,7 +283,7 @@ coastline_dynamics/
   CITATION.cff       как цитировать модуль
 ```
 
-Встроенная справка открывается кнопкой «Справка» в меню модуля; её текст лежит в [help/index.html](help/index.html).
+Встроенная справка открывается кнопкой «Справка» в меню модуля; её текст лежит в [help/index.html](help/index.html), английский вариант — в [help/index_en.html](help/index_en.html).
 
 ## Источники
 
@@ -300,7 +303,7 @@ coastline_dynamics/
 Если модуль пригодился в работе, сошлитесь на него:
 
 > Lebedev E.D. Coastline Dynamics (Динамика береговой линии): модуль QGIS для построения годовых береговых
-> линий и расчёта темпов их смещения. Версия 0.1.0. 2026. URL: <адрес этого репозитория>
+> линий и расчёта темпов их смещения. Версия 0.1.0. 2026. URL: https://github.com/EvgenieLebedev/coastline_dynamics
 
 ```bibtex
 @software{lebedev_coastline_dynamics_2026,
@@ -308,7 +311,7 @@ coastline_dynamics/
   title   = {Coastline Dynamics: a {QGIS} plugin for annual shorelines and rates of coastal change},
   version = {0.1.0},
   year    = {2026},
-  url     = {<адрес этого репозитория>}
+  url     = {https://github.com/EvgenieLebedev/coastline_dynamics}
 }
 ```
 
@@ -325,4 +328,4 @@ coastline_dynamics/
 
 ## Автор
 
-Lebedev E.D., z.lebedev.1998@yandex.ru. Замечания и предложения удобно оставлять в разделе Issues.
+Lebedev E.D., z.lebedev.1998@yandex.ru. Замечания и предложения удобно оставлять в разделе [Issues](https://github.com/EvgenieLebedev/coastline_dynamics/issues).

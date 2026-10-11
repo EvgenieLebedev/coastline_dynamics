@@ -9,6 +9,7 @@ import os
 
 import numpy as np
 from osgeo import gdal, osr
+from .i18n import tr
 
 gdal.UseExceptions()
 osr.UseExceptions()
@@ -68,7 +69,7 @@ class Grid(object):
         return Grid(d["epsg"], d["x0"], d["y1"], d["res"], d["width"], d["height"])
 
     def __repr__(self):
-        return "Grid(EPSG:%d, %dx%d, шаг %g м, начало %.1f/%.1f)" % (
+        return tr("Grid(EPSG:%d, %dx%d, шаг %g м, начало %.1f/%.1f)") % (
             self.epsg, self.width, self.height, self.res, self.x0, self.y1)
 
 

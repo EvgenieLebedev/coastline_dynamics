@@ -19,6 +19,7 @@ from osgeo import osr
 from scipy import ndimage, spatial, stats
 
 from . import gridio
+from .i18n import tr
 
 OUTLIER_METHODS = ("dea", "residual", "none")
 _BASE32 = "0123456789bcdefghjkmnpqrstuvwxyz"
@@ -231,15 +232,15 @@ def rates_of_change(shorelines, prep, baseline_year=None, spacing=30.0, max_vali
         by_year.setdefault(rec["year"], []).extend(rec["lines"])
     years = sorted(by_year)
     if len(years) < 3:
-        raise ValueError("Для оценки темпов нужны береговые линии хотя бы за три года.")
+        raise ValueError(tr("Для оценки темпов нужны береговые линии хотя бы за три года."))
     if baseline_year is None or baseline_year not in by_year:
         if baseline_year is not None:
-            log("Опорного года %s нет среди береговых линий; взят последний год ряда." % baseline_year)
+            log(tr("Опорного года %s нет среди береговых линий; взят последний год ряда.") % baseline_year)
         baseline_year = years[-1]
     pts = points_along(by_year[baseline_year], spacing)
     if len(pts) == 0:
-        raise ValueError("Береговая линия опорного года пуста.")
-    log("Опорный год %d, точек через %.0f м: %d." % (baseline_year, spacing, len(pts)))
+        raise ValueError(tr("Береговая линия опорного года пуста."))
+    log(tr("Опорный год %d, точек через %.0f м: %d.") % (baseline_year, spacing, len(pts)))
 
     year_pos = {y: k for k, y in enumerate(prep["years"])}
     base_arr = prep["combined"][year_pos[baseline_year]]
@@ -305,7 +306,7 @@ def rates_of_change(shorelines, prep, baseline_year=None, spacing=30.0, max_vali
         rec["certainty"] = cert
         out.append(rec)
     good = sum(1 for r in out if r["certainty"] == "good")
-    log("Рассчитаны темпы в %d точках; надёжных (certainty = good): %d." % (len(out), good))
+    log(tr("Рассчитаны темпы в %d точках; надёжных (certainty = good): %d.") % (len(out), good))
     return years, out
 
 
@@ -346,7 +347,7 @@ def hotspots(points, years, baseline_lines, epsg, radius=1000.0, spacing=30.0,
             rec["dist_%d" % y] = _round(med[j], 2)
         rec["certainty"] = "good" if len(ids) >= min_n else "insufficient points"
         out.append(rec)
-    log("Обобщённых точек радиуса %.0f м: %d." % (radius, len(out)))
+    log(tr("Обобщённых точек радиуса %.0f м: %d.") % (radius, len(out)))
     return out
 
 

@@ -6,6 +6,8 @@ abstract: "A QGIS plugin that maps the shoreline of every year from Landsat and 
 version: 0.1.0
 date-released: 2026-10-12
 license: MIT
+url: "https://github.com/EvgenieLebedev/coastline_dynamics"
+repository-code: "https://github.com/EvgenieLebedev/coastline_dynamics"
 authors:
   - family-names: Lebedev
     given-names: E. D.

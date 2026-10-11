@@ -22,6 +22,7 @@ from osgeo import gdal
 
 from . import gridio, morph
 from .sensors import SENSORS, STAC_URL, TOKEN_URL, BANDS, SCALE, NODATA, instrument_of
+from .i18n import tr
 
 ARCHIVE_FILE = "archive.json"
 CATALOG_FILE = "scenes.csv"
@@ -54,7 +55,7 @@ def http_json(url, payload=None, timeout=90, retries=4):
         except (urllib.error.URLError, OSError, ValueError) as exc:
             last = exc
             time.sleep(2 + 3 * attempt)
-    raise RuntimeError("Нет ответа от %s: %s" % (url.split("?")[0], last))
+    raise RuntimeError(tr("Нет ответа от %s: %s") % (url.split("?")[0], last))
 
 
 class Signer(object):
@@ -193,7 +194,7 @@ def read_to_grid(href, grid, signer, categorical=False):
         except RuntimeError as exc:
             last = exc
             time.sleep(3 + 4 * attempt)
-    raise RuntimeError("Не удалось прочитать %s: %s" % (href.split("?")[0].split("/")[-1], last))
+    raise RuntimeError(tr("Не удалось прочитать %s: %s") % (href.split("?")[0].split("/")[-1], last))
 
 
 def fetch_observation(obs, sensor_key, grid, signer, min_clear, cloud_px):
@@ -281,8 +282,8 @@ def prepare_archive(folder, bounds_lonlat, sensor_key, epsg=None, res=None):
     info = load_archive(folder)
     if info is not None:
         if info["sensor"] != sensor_key:
-            raise ValueError("В папке уже лежит архив другой съёмочной системы (%s). "
-                             "Укажите другую папку." % info["sensor"])
+            raise ValueError(tr("В папке уже лежит архив другой съёмочной системы (%s). "
+                             "Укажите другую папку.") % info["sensor"])
         return info, gridio.Grid.from_dict(info["grid"])
     sensor = SENSORS[sensor_key]
     lon = 0.5 * (bounds_lonlat[0] + bounds_lonlat[2])
@@ -293,8 +294,8 @@ def prepare_archive(folder, bounds_lonlat, sensor_key, epsg=None, res=None):
     bounds = gridio.transform_bounds(bounds_lonlat, 4326, epsg)
     grid = gridio.grid_from_bounds(bounds, epsg, res, align)
     if grid.width * grid.height > 36e6:
-        raise ValueError("Участок слишком велик: %d x %d пикселей. Уменьшите охват "
-                         "или разбейте его на части." % (grid.width, grid.height))
+        raise ValueError(tr("Участок слишком велик: %d x %d пикселей. Уменьшите охват "
+                         "или разбейте его на части.") % (grid.width, grid.height))
     if not os.path.isdir(folder):
         os.makedirs(folder)
     info = {"sensor": sensor_key, "collection": sensor["collection"],
@@ -321,7 +322,7 @@ def download_scenes(folder, bounds_lonlat, sensor_key="landsat", year_from=1984,
     info, grid = prepare_archive(folder, bounds_lonlat, sensor_key, epsg, res)
     sensor = SENSORS[sensor_key]
     bbox = info["bounds_lonlat"]
-    log("Расчётная сетка: %s" % grid)
+    log(tr("Расчётная сетка: %s") % grid)
     cloud_px = [f / grid.res for f in cloud_filters]
 
     done = {r["obs_id"]: r for r in load_catalog(folder)}
@@ -342,11 +343,11 @@ def download_scenes(folder, bounds_lonlat, sensor_key="landsat", year_from=1984,
                     continue
             new.append(o)
         todo.extend(new)
-        log("%d: в каталоге сцен %d, наблюдений %d, к загрузке %d" % (year, len(items), len(obs), len(new)))
+        log(tr("%d: в каталоге сцен %d, наблюдений %d, к загрузке %d") % (year, len(items), len(obs), len(new)))
     summary = {"found": found, "todo": len(todo), "ok": 0, "cloudy": 0, "empty": 0, "error": 0,
                "grid": grid, "folder": folder}
     if not todo:
-        log("Все найденные наблюдения уже есть в архиве.")
+        log(tr("Все найденные наблюдения уже есть в архиве."))
         progress(1.0)
         return summary
 
@@ -392,8 +393,8 @@ def download_scenes(folder, bounds_lonlat, sensor_key="landsat", year_from=1984,
                 _append_catalog(folder, row)     # сбойные сцены в таблицу не пишутся: повтор их докачает
             if n % 20 == 0 or n == len(todo):
                 rate = (time.time() - t0) / n
-                log("  загружено %d из %d (пригодных %d, облачных %d, сбоев %d), "
-                    "осталось около %.0f мин" % (n, len(todo), summary["ok"], summary["cloudy"],
+                log(tr("  загружено %d из %d (пригодных %d, облачных %d, сбоев %d), "
+                    "осталось около %.0f мин") % (n, len(todo), summary["ok"], summary["cloudy"],
                                                  summary["error"], rate * (len(todo) - n) / 60.0))
             progress(n / float(len(todo)))
     except Canceled:
@@ -401,7 +402,7 @@ def download_scenes(folder, bounds_lonlat, sensor_key="landsat", year_from=1984,
         raise
     finally:
         executor.shutdown(wait=True)
-    log("Загрузка завершена за %.1f мин: пригодных наблюдений %d, отброшено по облачности %d, "
-        "пустых %d, сбоев %d." % ((time.time() - t0) / 60.0, summary["ok"], summary["cloudy"],
+    log(tr("Загрузка завершена за %.1f мин: пригодных наблюдений %d, отброшено по облачности %d, "
+        "пустых %d, сбоев %d.") % ((time.time() - t0) / 60.0, summary["ok"], summary["cloudy"],
                                  summary["empty"], summary["error"]))
     return summary

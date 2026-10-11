@@ -20,14 +20,15 @@ import numpy as np
 from . import gridio
 from .sensors import BANDS, SCALE, NODATA
 from .stac import load_archive, load_catalog, Canceled
+from .i18n import tr
 
 INDICES = {
     "mndwi": ("green", "swir1"),     # Xu, 2006
     "ndwi": ("green", "nir"),        # McFeeters, 1996
 }
 INDEX_TITLES = {
-    "mndwi": "MNDWI (зелёный и средний ИК)",
-    "ndwi": "NDWI (зелёный и ближний ИК)",
+    "mndwi": tr("MNDWI (зелёный и средний ИК)"),
+    "ndwi": tr("NDWI (зелёный и ближний ИК)"),
 }
 META_FILE = "composites.json"
 EPS = 1e-4          # нижняя граница отражения: поверхностное отражение воды в ИК бывает отрицательным
@@ -93,7 +94,7 @@ def load_levels(path):
             times.append(calendar.timegm(when.timetuple()))
             values.append(val)
     if len(times) < 2:
-        raise ValueError("В таблице уровня не найдено ни одной пары «дата — значение»: %s" % path)
+        raise ValueError(tr("В таблице уровня не найдено ни одной пары «дата — значение»: %s") % path)
     order = np.argsort(times)
     return np.asarray(times, dtype=np.float64)[order], np.asarray(values, dtype=np.float64)[order]
 
@@ -121,7 +122,7 @@ def level_filter(rows, levels_path, fraction=0.5, centre=None, mode="range"):
     lev = np.array([np.interp(obs_time(r), times, values, left=np.nan, right=np.nan) for r in rows])
     known = np.isfinite(lev)
     if not known.any():
-        raise ValueError("Ряд уровня не перекрывается по времени со снимками.")
+        raise ValueError(tr("Ряд уровня не перекрывается по времени со снимками."))
     centre = float(np.mean(values)) if centre is None else float(centre)
     if mode == "share":
         half = float(np.quantile(np.abs(lev[known] - centre), min(1.0, max(0.0, fraction))))
@@ -180,27 +181,27 @@ def build_composites(archive_dir, out_dir, index="mndwi", year_from=None, year_t
     progress = progress or (lambda frac: None)
     is_canceled = is_canceled or (lambda: False)
     if index not in INDICES:
-        raise ValueError("Неизвестный индекс: %s" % index)
+        raise ValueError(tr("Неизвестный индекс: %s") % index)
     info = load_archive(archive_dir)
     if info is None:
-        raise ValueError("В папке нет архива сцен (файл archive.json): %s" % archive_dir)
+        raise ValueError(tr("В папке нет архива сцен (файл archive.json): %s") % archive_dir)
     grid = gridio.Grid.from_dict(info["grid"])
     rows = [r for r in load_catalog(archive_dir) if r["status"] == "ok"
             and month_from <= int(r["date"][5:7]) <= month_to
             and os.path.exists(os.path.join(archive_dir, r["file"]))]
     if not rows:
-        raise ValueError("В архиве нет пригодных сцен за выбранные месяцы.")
+        raise ValueError(tr("В архиве нет пригодных сцен за выбранные месяцы."))
     level_info = None
     if levels_path:
         rows, level_info = level_filter(rows, levels_path, level_fraction, level_centre, level_mode)
-        log("Отбор по уровню моря: оставлено %d наблюдений из %d (уровень от %.2f до %.2f)."
+        log(tr("Отбор по уровню моря: оставлено %d наблюдений из %d (уровень от %.2f до %.2f).")
             % (level_info["kept"], level_info["total"], level_info["low"], level_info["high"]))
     have = sorted(set(r["year"] for r in rows))
     year_from = have[0] if year_from is None else int(year_from)
     year_to = have[-1] if year_to is None else int(year_to)
     years = [y for y in range(year_from, year_to + 1) if y in have]
     if not years:
-        raise ValueError("За годы %d–%d в архиве нет пригодных сцен." % (year_from, year_to))
+        raise ValueError(tr("За годы %d–%d в архиве нет пригодных сцен.") % (year_from, year_to))
     by_year = {}
     for r in rows:
         by_year.setdefault(r["year"], []).append(r)
@@ -233,7 +234,7 @@ def build_composites(archive_dir, out_dir, index="mndwi", year_from=None, year_t
     per_row = grid.width * nmax * (3 * 4 * 3 + len(need) * 4 * 2)        # байт на строку растра
     step = int(max(8, min(grid.height, memory_mb * 1024.0 * 1024.0 / per_row)))
     strips = [(r0, min(r0 + step, grid.height)) for r0 in range(0, grid.height, step)]
-    log("Индекс %s, годы %d–%d (лет с данными: %d), наблюдений %d; сетка %dx%d, полос %d."
+    log(tr("Индекс %s, годы %d–%d (лет с данными: %d), наблюдений %d; сетка %dx%d, полос %d.")
         % (index.upper(), years[0], years[-1], len(years), sum(len(by_year[y]) for y in years),
            grid.width, grid.height, len(strips)))
 
@@ -287,7 +288,7 @@ def build_composites(archive_dir, out_dir, index="mndwi", year_from=None, year_t
             "created": dt.datetime.now().strftime("%Y-%m-%d %H:%M")}
     with open(os.path.join(out_dir, META_FILE), "w", encoding="utf-8") as f:
         json.dump(meta, f, ensure_ascii=False, indent=1)
-    log("Композиты записаны в %s" % out_dir)
+    log(tr("Композиты записаны в %s") % out_dir)
     return meta
 
 
@@ -307,10 +308,10 @@ def index_from_rasters(files_by_year, out_dir, index="mndwi", band_a=2, band_b=5
     is_canceled = is_canceled or (lambda: False)
     years = sorted(files_by_year)
     if not years:
-        raise ValueError("Не задано ни одного годового растра.")
+        raise ValueError(tr("Не задано ни одного годового растра."))
     grid = gridio.grid_of(files_by_year[years[0]])
     if grid.epsg == 0:
-        raise ValueError("У растра не определён код EPSG системы координат: %s" % files_by_year[years[0]])
+        raise ValueError(tr("У растра не определён код EPSG системы координат: %s") % files_by_year[years[0]])
     if not os.path.isdir(out_dir):
         os.makedirs(out_dir)
     for n, y in enumerate(years, 1):
@@ -318,7 +319,7 @@ def index_from_rasters(files_by_year, out_dir, index="mndwi", band_a=2, band_b=5
             raise Canceled()
         path = files_by_year[y]
         if not gridio.grid_of(path).same_as(grid):
-            raise ValueError("Растр %s лежит в другой сетке, чем растр первого года." % path)
+            raise ValueError(tr("Растр %s лежит в другой сетке, чем растр первого года.") % path)
         raw = gridio.read_tif(path, bands=[band_a, band_b]).astype(np.float32)
         bad = ~np.isfinite(raw).all(axis=0)
         if nodata is not None:

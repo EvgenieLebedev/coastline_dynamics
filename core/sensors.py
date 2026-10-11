@@ -6,6 +6,7 @@
 каталог выдаёт без регистрации.
 """
 import numpy as np
+from .i18n import tr
 
 STAC_URL = "https://planetarycomputer.microsoft.com/api/stac/v1"
 TOKEN_URL = "https://planetarycomputer.microsoft.com/api/sas/v1/token/"
@@ -62,7 +63,7 @@ def _s2_bad(scl, item):
 
 SENSORS = {
     "landsat": {
-        "title": "Landsat 4–9, Collection 2 Level-2 (30 м, с 1982 г.)",
+        "title": tr("Landsat 4–9, Collection 2 Level-2 (30 м, с 1982 г.)"),
         "collection": "landsat-c2-l2",
         "assets": {"green": "green", "nir": "nir08", "swir1": "swir16"},
         "qa": "qa_pixel",
@@ -78,7 +79,7 @@ SENSORS = {
         "extensions": ".tif,.TIF",
     },
     "sentinel2": {
-        "title": "Sentinel-2 L2A (10 м, с 2015 г.)",
+        "title": tr("Sentinel-2 L2A (10 м, с 2015 г.)"),
         "collection": "sentinel-2-l2a",
         "assets": {"green": "B03", "nir": "B08", "swir1": "B11"},
         "qa": "SCL",
