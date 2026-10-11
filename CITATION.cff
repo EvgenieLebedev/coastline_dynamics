@@ -1,0 +1,37 @@
+cff-version: 1.2.0
+message: "If you use this plugin, please cite it as below. Please also cite the method paper listed in the references."
+type: software
+title: "Coastline Dynamics: a QGIS plugin for annual shorelines and rates of coastal change"
+abstract: "A QGIS plugin that maps the shoreline of every year from Landsat and Sentinel-2 time series and computes rates of coastal change, following the DEA Coastlines method."
+version: 0.1.0
+date-released: 2026-10-12
+license: MIT
+authors:
+  - family-names: Lebedev
+    given-names: E. D.
+    email: z.lebedev.1998@yandex.ru
+keywords:
+  - QGIS
+  - coastline
+  - shoreline change
+  - coastal erosion
+  - Landsat
+  - Sentinel-2
+  - STAC
+references:
+  - type: article
+    title: "Mapping Australia's dynamic coastline at mean sea level using three decades of Landsat imagery"
+    authors:
+      - family-names: Bishop-Taylor
+        given-names: Robbi
+      - family-names: Nanson
+        given-names: Rachel
+      - family-names: Sagar
+        given-names: Stephen
+      - family-names: Lymburner
+        given-names: Leo
+    journal: "Remote Sensing of Environment"
+    volume: 267
+    start: 112734
+    year: 2021
+    doi: 10.1016/j.rse.2021.112734

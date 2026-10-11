@@ -1,0 +1,35 @@
+Coastline Dynamics (Динамика береговой линии), a QGIS plugin
+Copyright (c) 2026 Lebedev E.D.
+Licensed under the MIT License, see the LICENSE file.
+
+This plugin implements the method of Digital Earth Australia Coastlines:
+
+  Bishop-Taylor R., Nanson R., Sagar S., Lymburner L. (2021). Mapping
+  Australia's dynamic coastline at mean sea level using three decades of
+  Landsat imagery. Remote Sensing of Environment, 267, 112734.
+  https://doi.org/10.1016/j.rse.2021.112734
+
+Parts of the computational core were ported from the DEA Coastlines source
+code (Geoscience Australia, https://github.com/GeoscienceAustralia/dea-coastlines),
+which is licensed under the Apache License, Version 2.0. A copy of that
+licence is in LICENSES/Apache-2.0.txt.
+
+Files that contain ported and modified code:
+
+  core/composites.py   follows the raster stage of DEA Coastlines
+                       (coastlines/raster.py)
+  core/masks.py        port of contours_preprocess (coastlines/vector.py)
+  core/rates.py        port of points_on_line, annual_movements,
+                       change_regress, calculate_regressions and
+                       all_time_stats (coastlines/vector.py) and of the
+                       summary points from coastlines/continental.py
+
+Changes made to the ported code:
+
+  - rewritten for numpy, scipy and GDAL arrays instead of xarray,
+    Open Data Cube and geopandas;
+  - sizes of morphological elements converted from Landsat pixels to metres;
+  - tide modelling replaced with an optional user-supplied sea level table;
+  - the sea is found from the data (largest water body, all water bodies
+    wider than 300 m, or a user layer) instead of a ready-made mask;
+  - an alternative outlier rule (residuals from a Theil-Sen line) added.

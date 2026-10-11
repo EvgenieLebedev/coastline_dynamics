@@ -1,0 +1,16 @@
+[general]
+name=Динамика береговой линии (Coastline Dynamics)
+qgisMinimumVersion=3.22
+qgisMaximumVersion=3.99
+description=Годовые береговые линии и темпы их смещения по многолетним рядам снимков Landsat и Sentinel-2 (методика DEA Coastlines).
+about=Модуль переносит в QGIS методику проекта Digital Earth Australia Coastlines (Bishop-Taylor et al., 2021): загрузка снимков из открытого каталога STAC, годовые медианные композиты водного индекса, выделение береговой линии с подпиксельной точностью, расчёт темпов отступания и нарастания берега в точках через 30 м, обобщение по участкам. Все шаги доступны в панели инструментов анализа, в пакетном режиме и в построителе моделей. Требуются библиотеки numpy, scipy и GDAL, входящие в стандартную установку QGIS; регистрация в каталоге снимков не нужна.
+version=0.1.0
+author=Lebedev E.D
+email=z.lebedev.1998@yandex.ru
+category=Analysis
+icon=icons/icon.svg
+tags=coast, shoreline, erosion, landsat, sentinel-2, stac, remote sensing, берег, береговая линия, дистанционное зондирование
+hasProcessingProvider=yes
+experimental=False
+deprecated=False
+changelog=0.1.0 — первая версия: загрузка снимков, годовые композиты, береговые линии, темпы смещения, обобщённые темпы, график точки.
